@@ -42,7 +42,7 @@ Installation
 16S Database 
 ============
 
-RBRA depends on the sequences, taxonomic annotations and phylogenetic tree of 16S rRNA genes.  GreenGenes (99_otus) contains 203,452 16S rRNA genes, and provides the separate files for sequence, taxonomy and tree.  GreenGenes is available at ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/.  While GreenGenes is constantly used during our development, RBRA works for other annotation databases, e.g. SILVA, if all of sequence, taxonomy and tree files are provided.
+RBRA depends on the sequences, taxonomic annotations and phylogenetic tree of 16S rRNA genes.  GreenGenes (99_otus) contains 203,452 16S rRNA genes, and provides the separate files for sequence, taxonomy and tree.  GreenGenes is available at `here <ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/>`_.  While GreenGenes is constantly used during our development, RBRA works for other annotation databases, e.g. SILVA, if all of sequence, taxonomy and tree files are provided.
 
 =====
 Input

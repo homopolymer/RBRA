@@ -21,7 +21,7 @@ if os.path.exists('%s.gz'%gene_seq):
     sys.stderr.write('%s\n'%(' '.join(['gzip','-d','%s.gz'%gene_seq])))
     subprocess.call(['gzip','-d','%s.gz'%gene_seq])
 
-if os.path.exists('%s.tar.gz'%gene_seq):
+if os.path.exists('%s.fai.gz'%gene_seq):
     sys.stderr.write('%s\n'%(' '.join(['gzip','-d','%s.fai.gz'%gene_seq])))
     subprocess.call(['gzip','-d','%s.fai.gz'%gene_seq])
 
