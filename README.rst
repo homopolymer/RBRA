@@ -1,6 +1,6 @@
-***************************************
-RBRA: Reference-Based Ribosome Assembly
-***************************************
+****
+RBRA
+****
 
 Created by Feng Zeng Summer 2015.
 
