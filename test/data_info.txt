@@ -1,0 +1,6 @@
+BamFiles=/Users/fengzeng/workspace/RBRA/test/bams.fofn
+SampleData=/Users/fengzeng/workspace/RBRA/test/sample.txt
+GeneSeq=/Users/fengzeng/workspace/RBRA/test/99_otus.fasta
+GeneTax=/Users/fengzeng/workspace/RBRA/test/99_otu_taxonomy.txt
+GeneTree=/Users/fengzeng/workspace/RBRA/test/99_otus_unannotated.tree
+GeneIndex=/Users/fengzeng/workspace/RBRA/test/99_otus.fasta.fai
