@@ -10,7 +10,7 @@ Copyright 2015 Feng Zeng. All rights reserved.
 Overview
 ========
 
-RBRA is a **pipeline** for assembling the **strain-level** full-length **16S rRNA** genes.  It is designed for the large-scale metagenomic studies which contain tens to hundreds of samples.  It is *lightweight*, *ultrafast*, *accurate* and *easy-to-use*.
+RBRA is a **pipeline** for assembling the **strain-level** full-length **16S rRNA** genes.  It is designed for the large-scale metagenomic studies which contain tens to hundreds of samples.  RBRA uses the partial order graph (POG) and streaming Dirichlet process (DP) mixture clustering techniques to decode the composition of highly similar microorganisms. It is *lightweight*, *ultrafast*, *accurate* and *easy-to-use*.
 
 ==========
 Dependency
@@ -53,7 +53,7 @@ The input of RBRA is a metadata file.  An example of metadata is given in the <t
 A metadata file, e.g. data_info.txt, contains the following contents:
 
 * Sequencing data
-    1) BamFiles=<FILE>, a file listing the mapping files, one BAM file per line. ::
+    1) BamFiles=<FILE>, a file listing the mapping files of data against 16S rRNA reference, one BAM file per line. ::
 
         $ ls -A1 *.bam | xargs realpath > bams.fofn
 
