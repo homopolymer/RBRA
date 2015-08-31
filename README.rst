@@ -10,7 +10,7 @@ Copyright 2015 Feng Zeng. All rights reserved.
 Overview
 ========
 
-RBRA is a **pipeline** for assembling the **strain-level** full-length **16S rRNA** genes.  It is designed for the large-scale metagenomic studies which contain tens to hundreds of samples.  RBRA uses the partial order graph (POG) and streaming Dirichlet process (DP) mixture clustering techniques to decode the composition of highly similar microorganisms. It is *lightweight*, *ultrafast*, *accurate* and *easy-to-use*.
+RBRA is a **pipeline** for assembling the **strain-level** full-length **16S rRNA** genes.  It is designed for the large-scale metagenomic studies which contain tens to hundreds of samples.  RBRA uses the partial order graph (POG) and streaming Dirichlet process (DP) mixture clustering techniques to decode the composition of highly similar microorganisms. It is *lightweight*, *ultrafast*, *accurate* and *easy-to-use*. RBRA works on both Illumina and Roche/454 sequencing data.
 
 ==========
 Dependency
@@ -64,7 +64,7 @@ A metadata file, e.g. data_info.txt, contains the following contents:
 
 * Gene data
     1) GeneSeq=<FILE>, a FASTA file storing the reference sequences of 16S rRNA genes.
-    2) GeneIndex=<FILE>, the index file of FASTA file.
+    2) GeneIndex=<FILE>, the FASTA index file.
     3) GeneTree=<FILE>, a Newick file recording the phylgenetic tree of 16S rRNA genes.
     4) GeneTax=<FILE>, a taxonomic annotation of 16S rRNA genes.
 
