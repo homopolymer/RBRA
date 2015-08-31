@@ -65,7 +65,7 @@ A metadata file, e.g. data_info.txt, contains the following contents:
 * Gene data
     1) GeneSeq=<FILE>, a FASTA file storing the reference sequences of 16S rRNA genes.
     2) GeneIndex=<FILE>, the index file of FASTA file.
-    3) GeneTree=<FILE>, a Newick format file recording the phylgenetic tree of 16S rRNA genes.
+    3) GeneTree=<FILE>, a Newick file recording the phylgenetic tree of 16S rRNA genes.
     4) GeneTax=<FILE>, a taxonomic annotation of 16S rRNA genes.
 
 =====
