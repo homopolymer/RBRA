@@ -17,15 +17,14 @@ import time,random
 import textwrap,traceback
 
 class SeqData:
-    def __init__(self,_sample="",_bam=""):
-        self.SampleData = _sample
+    def __init__(self,_bam=""):
         self.BamFile = _bam
 
     def __repr__(self):
-        return 'SampleData=%s, BamFile=%s'%(self.SampleData,self.BamFile)
+        return 'BamFile=%s'%(self.BamFile)
 
     def __str__(self):
-        return 'SampleData=%s, BamFile=%s'%(self.SampleData,self.BamFile)
+        return 'BamFile=%s'%(self.BamFile)
 
 
 class GeneData:
@@ -43,7 +42,6 @@ class GeneData:
 
 
 def parse_data_info(data_info):
-    SampleData = ""
     BamFile = ""
     GeneSeq = ""
     GeneIndex = ""
@@ -51,10 +49,7 @@ def parse_data_info(data_info):
     with open(data_info) as f:
         for line in f:
             line = line.rstrip()
-            if line.startswith('SampleData'):
-                SampleData = line.split('=')[1]
-                SampleData = SampleData.strip()
-            elif line.startswith('BamFiles'):
+            if line.startswith('BamFiles'):
                 BamFile = line.split('=')[1]
                 BamFile = BamFile.strip()
             elif line.startswith('GeneSeq'):
@@ -69,7 +64,7 @@ def parse_data_info(data_info):
             elif line.startswith('GeneTax'):
                 GeneTax = line.split('=')[1]
                 GeneTax = GeneTax.strip()
-    return (SeqData(SampleData,BamFile), GeneData(GeneSeq,GeneIndex,GeneTree,GeneTax))
+    return (SeqData(BamFile), GeneData(GeneSeq,GeneIndex,GeneTree,GeneTax))
 
 
 def compute_depth_of_seq_data(GeneData,SeqData,OutFile):
@@ -84,7 +79,8 @@ def compute_depth_of_seq_data(GeneData,SeqData,OutFile):
             if len(line.strip())>0:
                 N += 1
     N = min([N,opts.cores])
-    cmd = ['mpirun','-np',str(N),os.path.join(ExecDir,'coverage_all_samples.py')]
+    #cmd = ['mpirun','-np',str(N),os.path.join(ExecDir,'coverage_all_samples.py')]
+    cmd = [os.path.join(ExecDir,'coverage_all_samples.py'),'-c',str(N)]
 
     if opts.verbose:
         cmd.append('-v')
@@ -137,10 +133,10 @@ def recluster_data(GeneData,SeqData,SeedGene):
     if opts.verbose:
         logging.info('map gene reads to seed genes')
 
-    cmd = [os.path.join(ExecDir,'recluster_data_to_seed_otus.py'),'-c',str(opts.cores)]
+    cmd = [os.path.join(ExecDir,'recluster_data_to_seed_otus.py'),'-c',str(opts.cores),'-S','0']
 
     if opts.verbose:
-        cmd.extend(['-v',str(1)])
+        cmd.extend(['-v'])
 
     cmd.extend([GeneData.GeneSeq,SeedGene,SeqData.BamFile])
     subprocess.call(cmd)
@@ -225,7 +221,7 @@ def rbra_pipe(GeneData,SeqData):
 
     # back to WorkDir and delete TmpDir
     os.chdir(WorkDir)
-    if os.path.exists(TmpDir):
+    if os.path.exists(TmpDir) and not opts.keep:
         subprocess.call(['rm','-rf',TmpDir])
 
 
@@ -262,6 +258,7 @@ with abundance >= INT [13]',default=13,type=int,dest='gene_abun',metavar='INT')
         parser.add_argument('-p','--prefix',help='output filename prefix [16s_gene_assembly]',\
                             default='16s_gene_assembly',dest='prefix',metavar='STR')
         # other options
+        parser.add_argument('-R',dest='keep',action='store_true',default=False,help='keep intermediate files')
         parser.add_argument('-v',dest='verbose',action='store_true',default=False,help='verbose output')
         # parse options
         opts = parser.parse_args()

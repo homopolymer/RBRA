@@ -56,7 +56,7 @@ setup(
     description = 'a pipeline to assemble strain-level full-length 16S rRNA genes',
     author = 'Feng Zeng',
     author_email = 'zengfeng@xmu.edu.cn',
-    version = '0.1.0',
+    version = '0.2.0',
     url = 'https://github.com/homopolymer/RBRA',
     scripts = scripts,
     install_requires = install_requires,   

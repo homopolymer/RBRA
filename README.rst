@@ -17,7 +17,6 @@ Dependency
 ==========
 
 * Python >= 2.7.10
-* mpi4py >= 1.3.1
 * ETE2 Toolkit >= 2.3.1
 * Scipy >= 0.15.1
 * Numpy >= 1.9.2
@@ -55,12 +54,7 @@ A metadata file, e.g. data_info.txt, contains the following contents:
 * Sequencing data
     1) BamFiles=<FILE>, a file listing the mapping files of data against 16S rRNA reference, one BAM file per line. ::
 
-        $ ls -A1 *.bam | xargs realpath > bams.fofn
-
-    2) SampleData=<FILE>, a tab-delimited file recording sample data.  An example is::
-
-         #RUN         SAMPLE          MODE      SINGLE    PAIRED1              PAIRED2
-         SRR606249    OAK_MOCK_WGS    paired    na        SRR606249_1.fastq    SRR606249_2.fastq
+        $ ls -A1 *_to_gg_99_otus.bam | xargs realpath > bams.fofn
 
 * Gene data
     1) GeneSeq=<FILE>, a FASTA file storing the reference sequences of 16S rRNA genes.
@@ -85,6 +79,17 @@ The directory <test> contains data and script to test whether RBRA installs and 
     $ cd test
     $ python make_datainfo.py
     $ ../bin/rbra.py -c 20 -v data_info.txt
+
+==========
+Change Log
+==========
+
+* August 31, 2015, RBRA v0.1.0 released
+
+* September 2, 2015, RBRA v0.2.0 released
+    1) Replace mpi4py by multiprocessing
+    2) Change mawk to awk
+    3) Clean code
 
 ================
 Development Team
