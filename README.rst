@@ -84,14 +84,14 @@ The directory <test> contains data and script to test whether RBRA installs and 
 Change Log
 ==========
 
-* August 31, 2015, RBRA v0.1.0 released
-
 * September 2, 2015, RBRA v0.2.0 released
 
 
     1) Replace mpi4py by multiprocessing
     2) Change mawk to awk
     3) Clean code
+
+* August 31, 2015, RBRA v0.1.0 released
 
 ================
 Development Team
