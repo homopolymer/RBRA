@@ -78,7 +78,8 @@ The directory <test> contains data and script to test whether RBRA installs and 
 
     $ cd test
     $ python make_datainfo.py
-    $ ../bin/rbra.py -c 20 -v data_info.txt
+    $ ../bin/rbra.py -c 20 -v data_info.txt 2>&1 | tee log.txt
+    $ less log.txt
 
 ==========
 Change Log
