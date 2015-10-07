@@ -14,6 +14,7 @@
 // Last Changed
 // ------------
 // July 30, 2015    Feng Zeng    Create it.
+// October 3, 2015  Feng Zeng    Add a count filter to assembly
 //
 //
 #include "PartialOrderGraph.hpp"
@@ -1029,7 +1030,10 @@ int main(int argc, char** argv)
             int si = 0;
             for (auto s=strains.begin(); s!=strains.end(); ++s,++si)
             {
-                if (s->abundance>=parameters->tau)
+                // comment out by Feng Zeng, October 3 2015
+                //if (s->abundance>=parameters->tau)
+                // change by Feng Zeng, October 3 2015
+                if (s->abundance>=parameters->tau and aux_reads.size()*s->abundance>10)
                 {
                     cout << ">" << it->gn << ":" << it->p0 << "-" << it->p1 << "_" << si << "_" << s->abundance << " "
                          << " " << int(aux_reads.size()*s->abundance) << endl;

@@ -84,7 +84,10 @@ The directory <test> contains data and script to test whether RBRA installs and 
 ==========
 Change Log
 ==========
+* September 7, 2015, RBRA v0.3.1 released
 
+    1) Add a filtration to StrainCall to filter out noisy assemblies
+    
 * September 7, 2015, RBRA v0.3.0 released
 
     1) Add coverage fraction into seed gene reference finding
