@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 """
 Find seed OTUs based on the phylogeny tree and abundance profile
+
+Change Log
+==========
+Sep 25, 2015    Feng Zeng    Add coverage criterion
+
 """
 
 import os
@@ -45,6 +50,26 @@ def load_gene_abundance(filename):
         for row in r:
             gene_abun[row[0]] = float(row[3])
     return gene_abun
+
+def load_gene_coverage(filename):
+    '''load gene coverage from the given file
+
+    Parameters
+    ----------
+    filename : gene abundance profile file
+
+    Returns
+    -------
+    dict
+        a dictionary object storing gene coverage
+
+    '''
+    gene_cover = defaultdict(float)
+    with open(filename) as f:
+        r = csv.reader(f,delimiter='\t')
+        for row in r:
+            gene_cover[row[0]] = float(row[4])
+    return gene_cover
 
 
 def load_phylogeny_tree(filename):
@@ -177,6 +202,9 @@ def find_seed_otus():
     gene_abun = load_gene_abundance(os.path.abspath(opts.abun[0]))
     if opts.verbose:
         logging.info('elapsed time on loading gene abundances is %f minutes' % ((time.time()-t0)/60.))
+
+    # TODO load gene coverage
+    gene_cover = load_gene_coverage(os.path.abspath(opts.abun[0]))
    
     # TODO load taxonomy annotation
     if opts.taxonomy is not None:
@@ -207,29 +235,37 @@ def find_seed_otus():
     total_abun = 0
     for node in gene_tree.iter_leaves():
         total_abun += gene_abun[node.name]
-    #abun_thres = min([0.005*total_abun,opts.depth_thres[0]])
     abun_thres = opts.depth_thres[0]
+    if opts.depth_ratio is not None:
+        abun_thres = opts.depth_ratio*total_abun
 
     # TODO report seed OTUs
     if opts.verbose:
-        logging.info('find gene cluster of depth greater than the threshold %f' % abun_thres)
+        logging.info('find gene cluster with depth threshold %f and coverage threshold %f' % (abun_thres,opts.gene_cover[0]))
     visited = Set()
     for t in gene_tree.traverse('preorder'):
         if t.id not in visited:
             visited.add(t.id)
             if len(t.centroid) == 1:
-                g = t.centroid[0]['gene']
-                if t.centroid[0]['abundance'] >= abun_thres: 
-                    out = {'gene':g, \
-                           'depth':gene_abun[g], \
-                           'abundance':t.centroid[0]['abundance']}
-                    if opts.taxonomy is not None:
-                        out['taxonomy'] = gene_tax[g]
-                    else:
-                        out['taxonomy'] = ''
-                    print '%(gene)s\t%(abundance)f\t%(depth)f\t%(taxonomy)s' % out
-                for n in t.get_descendants():
-                    visited.add(n.id)
+                if t.centroid[0]['abundance'] >= abun_thres:
+                    gs = list()
+                    if t.name in gene_cover:
+                        gs.extend([(gene_cover[t.name],t.name)])
+                    for n in t.get_descendants():
+                        if n.name in gene_cover:
+                            gs.extend([(gene_cover[n.name],n.name)])
+                        visited.add(n.id)
+                    gs = sorted(gs,reverse=True)
+                    if gs[0][0] >= opts.gene_cover[0]:
+                        out = {'gene':gs[0][1], \
+                               'depth':gene_abun[gs[0][1]], \
+                               'abundance':t.centroid[0]['abundance'], \
+                               'ratio':gs[0][0]}
+                        if opts.taxonomy is not None:
+                            out['taxonomy'] = gene_tax[gs[0][1]]
+                        else:
+                            out['taxonomy'] = ''
+                        print '%(gene)s\t%(abundance)f\t%(depth)f\t%(ratio)f\t%(taxonomy)s' % out
 
 
 if __name__ == "__main__":
@@ -249,6 +285,10 @@ if __name__ == "__main__":
                             default=[0.9],type=float,dest='sim_thres',metavar="SIMILARITY")
         parser.add_argument('-d',help='depth cutting threshold (default:10)',nargs=1,\
                             default=[10],type=float,dest='depth_thres',metavar='DEPTH')
+        parser.add_argument('-c',help='gene coverage threshold (default:0.6)',nargs=1,\
+                            default=[0.6],type=float,dest='gene_cover',metavar='COVERAGE')
+        parser.add_argument('-r',help='use adaptive depth threshold (0<=r<=1 of total depth)',\
+                            type=float,dest='depth_ratio',metavar='RATIO')
         parser.add_argument('-T',help='gene taxonomy annotation',default=None,type=str,\
                             dest='taxonomy',metavar="TAXONOMY")
         parser.add_argument('-v',help='verbose optput',action="store_true",default=False,dest='verbose')

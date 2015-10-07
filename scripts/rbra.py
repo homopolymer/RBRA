@@ -5,6 +5,10 @@ RBRA: Reference-based Ribosome Assembly
 It is to assemble full-length 16S rRNA genes of strains
 using metagenomics sequencing data.
 
+Change Log
+==========
+Sep 25, 2015    Feng Zeng    Add option for gene coverage
+
 '''
 
 import os
@@ -121,7 +125,11 @@ def find_seed_genes(GeneData,GeneAbundance,OutFile):
     if len(GeneData.GeneTax)>0:
         cmd.extend(['-T',GeneData.GeneTax])
 
-    cmd.extend(['-s',str(opts.gene_sim),'-d',str(opts.gene_abun)])
+    cmd.extend(['-s',str(opts.gene_sim),'-c',str(opts.gene_coverage)])
+    if opts.gene_abun is not None:
+        cmd.extend(['-d',str(opts.gene_abun)])
+    else:
+        cmd.extend(['-r',str(opts.gene_abun_ratio)])
     cmd.extend([GeneData.GeneTree,GeneAbundance])
 
     f = open(OutFile,'w')
@@ -251,10 +259,14 @@ if __name__=="__main__":
                             default=0.02,type=float,dest='tau',metavar='FLT')
         parser.add_argument('-d','--diff-rate',help='only include strains with difference rate >= FLT [0.02]',\
                             default=0.02,type=float,dest='diff_rate',metavar='FLT')
-        parser.add_argument('-g','--gene-sim',help='used in finding seed gene, merge genes with similarity >= FLT [0.93]',\
-                            default=0.93,type=float,dest='gene_sim',metavar='FLT')
-        parser.add_argument('-a','--gene-abun',help='used in finding seed gene, only include genes \n\
-with abundance >= INT [13]',default=13,type=int,dest='gene_abun',metavar='INT')
+        parser.add_argument('-g','--gene-sim',help='used in finding seed gene, merge genes with similarity >= FLT [0.9]',\
+                            default=0.9,type=float,dest='gene_sim',metavar='FLT')
+        parser.add_argument('-C','--gene-coverage',help='used in finding seed gene, coverage >= FLT [0.75]',\
+                            default=0.75,type=float,dest='gene_coverage',metavar='FLT')
+        parser.add_argument('-r','--gene-abun-ratio',help='used in finding seed gene, abundance ratio >= FLT [0.0005]', \
+                            default=0.0005,type=float,dest='gene_abun_ratio',metavar='FLT')
+        parser.add_argument('-a','--gene-abun',help='used in finding seed gene, abundance >= INT (second option)',\
+                            type=int,dest='gene_abun',metavar='INT')
         parser.add_argument('-p','--prefix',help='output filename prefix [16s_gene_assembly]',\
                             default='16s_gene_assembly',dest='prefix',metavar='STR')
         # other options

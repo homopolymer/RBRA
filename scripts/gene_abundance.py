@@ -1,6 +1,10 @@
-#!/usr/bin/env python
+#!/home/fzeng/anaconda/bin/python
 """
 Calculate gene abundance.
+
+Change Log
+==========
+Sep 24, 2015    Feng Zeng    Add coverage ratio and print out
 """
 
 from __future__ import division
@@ -13,6 +17,7 @@ import numpy as np
 import time
 from collections import defaultdict
 import textwrap,traceback
+from itertools import izip
 
 def cal_gene_abundance(breadth,depth):
     """abundance equation: sum breadthxdepth over all segments
@@ -26,7 +31,16 @@ def cal_gene_abundance(breadth,depth):
            abundance = (0.1)^1.5x0 + (0.6)^1.5x8 + (0.3)^1.5x10 
 
     """
-    return np.dot(np.power(breadth,1.5),depth)
+    lam = 1.0
+    return np.dot(np.power(breadth,lam),depth)
+
+def cal_gene_coverage(breadth,depth):
+    """calculate the coverage ratio of a gene"""
+    ratio = 0
+    for r,a in izip(breadth,depth):
+        if a>0:
+            ratio += r
+    return ratio
 
 
 def main():
@@ -54,7 +68,8 @@ def main():
             if gn is not None and gn != row[0]:
                 # calculate gene abundance and report
                 abun = cal_gene_abundance(breadth,depth)
-                print "%s\t%d\t%d\t%f" % (gn,1,gene[gn],abun)
+                ratio = cal_gene_coverage(breadth,depth)
+                print "%s\t%d\t%d\t%f\t%f" % (gn,1,gene[gn],abun,ratio)
                 # clean state
                 breadth = list()
                 depth = list()
@@ -64,7 +79,8 @@ def main():
             depth.append(float(row[3]))
         # last record
         abun = cal_gene_abundance(breadth,depth)
-        print "%s\t%d\t%d\t%f" % (gn,1,gene[gn],abun)
+        ratio = cal_gene_coverage(breadth,depth)
+        print "%s\t%d\t%d\t%f\t%f" % (gn,1,gene[gn],abun,ratio)
     
     if opts.verbose:
         logging.info('done')
