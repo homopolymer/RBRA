@@ -24,6 +24,7 @@ Dependency
 * Bowtie2 >= 2.2.4
 * Samtools >= 1.2
 * Bedtools >= 2.24.0
+* Sickle >= 1.33
 
 ============
 Installation
