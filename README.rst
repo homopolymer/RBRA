@@ -85,6 +85,11 @@ The directory <test> contains data and script to test whether RBRA installs and 
 Change Log
 ==========
 
+* September 7, 2015, RBRA v0.3.0 released
+
+    1) Add coverage fraction into seed gene reference finding
+    2) Add a script to count 16S assembly abundance per sample
+    
 * September 2, 2015, RBRA v0.2.0 released
 
 
