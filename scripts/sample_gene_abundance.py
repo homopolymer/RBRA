@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 '''
 Mapping-based sample-wise abundance estimation.
+
+File format for sample_info
+===========================
+<SAMPLE_ID>	<SAMPLE_READ_MAPPING_FILE>
 '''
 
 import os
