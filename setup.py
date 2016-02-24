@@ -10,13 +10,13 @@ BASEPATH = os.path.dirname(os.path.abspath(__file__))
 STRAINCALL_PATH = os.path.join(BASEPATH,'StrainCall')
 STRAINCALL_CPP = glob.glob(os.path.join(STRAINCALL_PATH,'*.cpp'))
 
-class StrainCallBuild(build):
+class ExBuild(build):
     def run(self):
         # run the original build code
         build.run(self)
         # build StrainCall
         build_path = os.path.abspath(self.build_temp)
-        cmd = ['g++','-std=c++11','-o',os.path.join(STRAINCALL_PATH,'StrainCall')]
+        cmd = [os.environ['CXX'],'-std=c++11','-o',os.path.join(STRAINCALL_PATH,'StrainCall')]
         cmd.extend(STRAINCALL_CPP)
 
         def compile():
@@ -31,7 +31,7 @@ class StrainCallBuild(build):
             self.copy_file(os.path.join(STRAINCALL_PATH,'StrainCall'),self.build_lib)
 
 
-class StrainCallInstall(install):
+class ExInstall(install):
     def initialize_options(self):
         install.initialize_options(self)
         self.build_scripts = None
@@ -47,6 +47,8 @@ class StrainCallInstall(install):
         # install StrainCall executables
         self.copy_tree(self.build_lib, os.path.join(self.exec_prefix,'bin'))
             
+        # install copy number file
+        self.copy_file(os.path.join(BASEPATH,'scripts/rrnDB_RDP.tsv'), os.path.join(self.exec_prefix,'bin/rrnDB_RDP.tsv'))
 
 install_requires = ['scipy >= 0.15.1','numpy >= 1.9.2','ete2 >= 2.3.1','mpi4py >= 1.3.1']
 scripts = glob.glob('scripts/*.py')
@@ -56,12 +58,12 @@ setup(
     description = 'a pipeline to assemble strain-level full-length 16S rRNA genes',
     author = 'Feng Zeng',
     author_email = 'zengfeng@xmu.edu.cn',
-    version = '0.2.0',
-    url = 'https://github.com/homopolymer/RBRA',
+    url = '',
     scripts = scripts,
     install_requires = install_requires,   
     cmdclass={
-        'build': StrainCallBuild,
-        'install': StrainCallInstall,
+        'build': ExBuild,
+        'install': ExInstall,
     }
 )
+

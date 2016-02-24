@@ -178,8 +178,7 @@ def map_data_to_seed_otus(seed_otus,data,mapper,map_args,out_dir,out_prefix,core
             logging.debug('map run %s of sample %s to seed otus with %d cpus' % (rn,sample,cores))
             t0 = time.time()
             os.system(' '.join(command))
-            logging.debug('elapsed time on mapping run {} of sample {} is {} minutes'.format(\
-                          rn,sample,round((time.time()-t0)/60.,5)))
+            logging.debug('elapsed time on mapping run %s of sample %s is %f minutes' % (rn,sample,(time.time()-t0)/60.))
             samlist.append(os.path.join(out_dir,'%s.%s.%s.sam'%(out_prefix,sample,rn)))
     return samlist
     
@@ -193,9 +192,52 @@ def file_size(f):
 def extract_marker_gene_reads(bams,out_prefix,cores):
     N = min(len(bams),cores,cpu_count())
     extract_reads.extract_reads(bamlist=bams,cores=N,prefix=out_prefix)
+    # merge single reads
+    cmd = ['cat']
+    for i in xrange(N):
+        hs = '%s.%d.single.fastq' % (out_prefix,i)
+        if file_size(hs)>0:
+            cmd.append(hs)
+    if len(cmd)>1:
+        f = open(out_prefix+'.single.fastq','w')
+        subprocess.call(cmd,stdout=f)
+        f.close()
+    # merge pe1 reads
+    cmd = ['cat']
+    for i in xrange(N):
+        h1 = '%s.%d.pe1.fastq' % (out_prefix,i)
+        if file_size(h1)>0:
+            cmd.append(h1)
+    if len(cmd)>1:
+        f = open(out_prefix+'.pe1.fastq','w')
+        subprocess.call(cmd,stdout=f)
+        f.close()
+    # merge pe2 reads
+    cmd = ['cat']
+    for i in xrange(N):
+        h2 = '%s.%d.pe2.fastq' % (out_prefix,i)
+        if file_size(h2)>0:
+            cmd.append(h2)
+    if len(cmd)>1:
+        f = open(out_prefix+'.pe2.fastq','w')
+        subprocess.call(cmd,stdout=f)
+        f.close()
+    # remove temporary file
+    cmd = ['rm']
+    for i in xrange(N):
+        hs = '%s.%d.single.fastq' % (out_prefix,i)
+        h1 = '%s.%d.pe1.fastq' % (out_prefix,i)
+        h2 = '%s.%d.pe2.fastq' % (out_prefix,i)
+        if os.path.exists(hs):
+            cmd.append(hs)
+        if os.path.exists(h1):
+            cmd.append(h1)
+        if os.path.exists(h2):
+            cmd.append(h2)
+    subprocess.call(cmd)
     
 
-def recluster_data(fasta_file,otu_file,bam_file,mapper,map_args,cores,start_from,verbose):
+def recluster_data(fasta_file,otu_file,bam_file,mapper,map_args,cores,start_from):
     '''main code interface'''
     # make a directory storing seed OTU sequences
     otu_dir = os.path.join(os.getcwd(),"0_otu_dir")
@@ -212,20 +254,30 @@ def recluster_data(fasta_file,otu_file,bam_file,mapper,map_args,cores,start_from
     # build the mapping index dict
     otu_file = 'seed_otus.fasta'
     if start_from == 0:
-        if verbose:
-            logging.info('build the %s index file'%mapper)
+        logging.info('build the %s index file'%mapper)
         t0 = time.time()
         build_seed_otus_dict(fasta_file,' '.join(seed_otus),otu_dir,otu_file,mapper)
-        if verbose:
-            logging.info('elapsed time on building the {} index file is {} minutes'.format(\
-                         mapper,round((time.time()-t0)/60.,5)))
+        logging.info('elapsed time on building the %s index file is %f minutes'%(mapper,(time.time()-t0)/60.))
 
     # load bam files
     bam_files = list()
     with open(bam_file) as f:
         for line in f:
             bam_files.append(line.strip())
-
+#
+    # load data file
+#    sample_data = defaultdict()
+#    sample_record = np.loadtxt(opts.data,dtype=[('run','S1024'),('sample','S1024'),('mode','S1024'),\
+#                                                ('single','S1024'),('pe1','S1024'),('pe2','S1024')],\
+#                                                comments=None)
+#    for d in sample_record:
+#        if d['run'].startswith('#'):
+#            continue
+#        if d['mode'] == 'single':
+#            sample_data.setdefault(d['sample'],[]).extend([(d['run'],d['single'])])
+#        else:
+#            sample_data.setdefault(d['sample'],[]).extend([(d['run'],d['pe1'],d['pe2'])])
+#
     # make a directory storing gene-associated reads
     read_dir = os.path.join(os.getcwd(),"1_read_dir")
     if not os.path.exists(read_dir):
@@ -233,15 +285,14 @@ def recluster_data(fasta_file,otu_file,bam_file,mapper,map_args,cores,start_from
 
     # extract marker gene reads
     sample_data = defaultdict()
-    out_prefix = os.path.join(read_dir,'marker_gene_reads')
     if start_from <= 1:
-        extract_marker_gene_reads(bam_files,out_prefix,cores)
-    single_reads = out_prefix + '.fastq'
-    pe1_reads = out_prefix + '_1.fastq'
-    pe2_reads = out_prefix + '_2.fastq'
-    if file_size(single_reads)>0:
+        extract_marker_gene_reads(bam_files,os.path.join(read_dir,'marker_gene_reads'),cores)
+    single_reads = os.path.join(read_dir,'marker_gene_reads.single.fastq')
+    pe1_reads = os.path.join(read_dir,'marker_gene_reads.pe1.fastq')
+    pe2_reads = os.path.join(read_dir,'marker_gene_reads.pe2.fastq')
+    if os.path.exists(single_reads):
         sample_data.setdefault('all_samples',[]).extend([('single',single_reads)])
-    if file_size(pe1_reads):
+    if os.path.exists(pe1_reads):
         sample_data.setdefault('all_samples',[]).extend([('paired',pe1_reads,pe2_reads)])
 
     # make a directory storing mapping results
@@ -252,14 +303,11 @@ def recluster_data(fasta_file,otu_file,bam_file,mapper,map_args,cores,start_from
     # map sequencing reads to seed otus
     map_prefix = 'to_seed_otus'
     if start_from <= 2:
-        if verbose:
-            logging.info('use %s to map reads onto %d seed otus with %d cores'%(mapper,len(seed_otus),cores))
+        logging.info('use %s to map reads onto %d seed otus with %d cores'%(mapper,len(seed_otus),cores))
         t0 = time.time()
         samlist = map_data_to_seed_otus(os.path.join(otu_dir,otu_file),sample_data,mapper,map_args,\
                                         map_dir,map_prefix,cores)
-        if verbose:
-            logging.info('elapsed time on mapping reads onto seed otus is {} minutes'.format(\
-                         round((time.time()-t0)/60.,5)))
+        logging.info('elapsed time on mapping reads onto seed otus is %f minutes'%((time.time()-t0)/60.))
     else:
         samlist = []
         for sample,runs in sample_data.iteritems():
@@ -291,20 +339,23 @@ if __name__ == "__main__":
         parser.add_argument('-c','--core',help='number of computing cores (default: 1)',default=1,dest='cores',type=int)
         parser.add_argument('-m','--mapper',help='mapping program, support bowtie,bowtie2,bwa,smalt (default: bowtie2)',\
                             dest='mapper',default='bowtie2',type=str)
-        parser.add_argument('-A','--map_args',help='mapping program arguments (default: --sensitive-local)',\
-                            dest='map_args',default='--sensitive-local',type=str)
+        parser.add_argument('-A','--map_args',help='mapping program arguments (default: --local)',\
+                            dest='map_args',default='--local',type=str)
         parser.add_argument('-S','--start_from',help='''start program from stage,\
 0: build mapping index,\
 1: extract gene-associated reads,\
 2: map reads to seed OTUs,\
 (default: 0)''',\
                             type=int,default=0,dest='start_from')
-        parser.add_argument('-v',help='verbose output',\
-                            action='store_true',default=False,dest='verbose')
+        parser.add_argument('-v',help='verbose level, 0:quiet, 1:info, 2:debug (default: 0)',\
+                            type=int,default=0,dest='verbose')
         opts = parser.parse_args()
 
         # set up logging format
-        logging.basicConfig(format="[%(asctime)s] %(levelname)s : %(message)s", level=logging.INFO)
+        if opts.verbose == 1:
+            logging.basicConfig(format="[%(asctime)s] %(levelname)s : %(message)s", level=logging.INFO)
+        elif opts.verbose == 2:
+            logging.basicConfig(format="[%(asctime)s] %(levelname)s : %(message)s", level=logging.DEBUG)
 
         if opts.start_from == 0:
             logging.info('start from building the mapping index')
@@ -315,10 +366,9 @@ if __name__ == "__main__":
         t_start = time.time()
         recluster_data(opts.fasta,opts.otu,opts.bams,\
                        opts.mapper,opts.map_args,\
-                       opts.cores,opts.start_from,opts.verbose)
+                       opts.cores,opts.start_from)
         # complete
-        if opts.verbose:
-            logging.info('total elapsed time is {} minutes'.format((time.time()-t_start)/60.))
+        logging.info('total elapsed time is %f minutes' % ((time.time()-t_start)/60.))
         sys.exit(0)
     except KeyboardInterrupt,e:
         raise e

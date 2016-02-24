@@ -418,7 +418,7 @@ void PartialOrderGraph::streaming_clustering(vector<Strain>& strains, ReadPairs&
                 for (auto s=delete_strains.rbegin(); s!=delete_strains.rend(); ++s)
                 {
                     level_strains.erase(*s);
-                }
+                }//*/
             }else if (!level_reads.empty())
             {
                 hard_clustering(level_strains,level_reads,new_reads,read_pairs);

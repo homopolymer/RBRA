@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''Extract out reads from SAM/BAM file(s)'''
+'''Extract out reads from a BAM file'''
 
 import os
 import sys
@@ -11,8 +11,9 @@ import traceback
 import subprocess
 import itertools
 import numpy as np
-from mpi4py import MPI
 from multiprocessing import Pool
+from collections import defaultdict
+import glob
 
 
 write_devnull = open(os.devnull,'w')
@@ -66,9 +67,10 @@ def write_read_to_file(handle,name,seq,qual):
 
 def extract_reads_of_a_bamlist(bamlist,roi=None,hs=None,h1=None,h2=None):
     '''extract sequence reads from a list of bam files'''
-    logging.debug('extract reads from %d bam files' % len(bamlist))
+    logging.info('subprocess: extract reads from %d bam files' % len(bamlist))
     handles = itertools.imap(lambda b,r:view_bam(b,r),\
                              bamlist,itertools.repeat(roi))
+    read_pool = defaultdict()
     # output reads
     for read in itertools.chain.from_iterable(handles):
         item = read.rstrip().split()       
@@ -82,15 +84,32 @@ def extract_reads_of_a_bamlist(bamlist,roi=None,hs=None,h1=None,h2=None):
             seq = item[9]
             qual = item[10]
         if paired:
-            if mapped | paired_mapped:
-                if item[6]=="=" or item[6]==item[3] or item[6]=="*" or item[3]=="*":
-                    if read_is_paired_first(int(item[1])):
-                        write_read_to_file(h1,'%s/1'%item[0],seq,qual)
-                    else:
-                        write_read_to_file(h2,'%s/2'%item[0],seq,qual)
-        elif mapped:
-            write_read_to_file(hs,item[0],seq,qual)
+            read_pool.setdefault(item[0],{}).update({'type':'paired'})
+            if read_is_paired_first(int(item[1])):
+                read_pool.setdefault(item[0],{}).update({'1':('%s/1'%item[0],seq,qual)})
+            else:
+                read_pool.setdefault(item[0],{}).update({'2':('%s/2'%item[0],seq,qual)})
+        else:
+            read_pool.setdefault(item[0],{}).update({'type':'single'})
+            read_pool.setdefault(item[0],{}).update({'data':('%s'%item[0],seq,qual)})
+    for rn in sorted(read_pool.keys()):
+        if read_pool[rn]['type'] == 'single':
+            a,b,c = read_pool[rn]['data']
+            write_read_to_file(hs,a,b,c)
+        else:
+            if '1' in read_pool[rn] and '2' in read_pool[rn]:
+                a,b,c = read_pool[rn]['1']
+                write_read_to_file(h1,a,b,c)
+                a,b,c = read_pool[rn]['2']
+                write_read_to_file(h2,a,b,c)
+            elif '1' in read_pool[rn]:
+                a,b,c = read_pool[rn]['1']
+                write_read_to_file(hs,a,b,c)
+            elif '2' in read_pool[rn]:
+                a,b,c = read_pool[rn]['2']
+                write_read_to_file(hs,a,b,c)
             
+
 def sub_extract_reads(bamlist=list(),roilist=None,core=None,prefix=None):
     hs = open('%s.%d.single.fastq'%(prefix,core),'w')
     h1 = open('%s.%d.pe1.fastq'%(prefix,core),'w')
@@ -105,8 +124,10 @@ def sub_extract_reads_wrapper(args):
     return sub_extract_reads(*args)
 
 def extract_reads(bamlist=list(),roilist=None,cores=1,prefix=None):
-    logging.info('dump reads from %d bam files'%len(bamlist))
+    logging.info('dump reads from %d bam files using %d cores'%(len(bamlist),min(len(bamlist),cores)))
+
     t0 = time.time()
+    
     N = min(len(bamlist),cores)
     R = []
     pool = Pool(N)
@@ -115,7 +136,28 @@ def extract_reads(bamlist=list(),roilist=None,cores=1,prefix=None):
     r.wait()
     pool.close()
     pool.join()
+    
+    # merge fastq files
+    PE1 = sorted([f for f in glob.glob(prefix+'*.pe1.fastq')])
+    cmd = ['cat'] + PE1
+    with open(prefix+'_1.fastq','w') as f:
+        subprocess.call(cmd,stdout=f)
+    PE2 = sorted([f for f in glob.glob(prefix+'*.pe2.fastq')])
+    cmd = ['cat'] + PE2
+    with open(prefix+'_2.fastq','w') as f:
+        subprocess.call(cmd,stdout=f)
+    SIN = sorted([f for f in glob.glob(prefix+'*.single.fastq')])
+    cmd = ['cat'] + SIN
+    with open(prefix+'.fastq','w') as f:
+        subprocess.call(cmd,stdout=f)
+    
+    # remove temporary files
+    for f in PE1+PE2+SIN:
+        subprocess.call(['rm','-f',f])
+
     logging.info('elapsed time on dumping reads from %d bam files is %f minutes' % (len(bamlist),(time.time()-t0)/60.))
+
+    return (prefix+'_1.fastq',prefix+'_2.fastq',prefix+'.fastq')
     
 
 if __name__ == "__main__":
@@ -126,43 +168,32 @@ if __name__ == "__main__":
                                          --------\n\
                                          1. extract_reads\n\
                                          \n'''),formatter_class=argparse.RawTextHelpFormatter)
-        parser.add_argument('-b','--bam',help='SAM/BAM file(s)',nargs='*',type=str,default=None)
-        parser.add_argument('-f','--fofn',help='file of listing SAM/BAM files, one-file-one-line',type=str,default=None)
-        parser.add_argument('-r','--roi',help='region(s) of interesting',nargs='*',type=str,default=None)
-        parser.add_argument('-R',help='file listing regions of interesting',default=None,type=str,dest="ROI")
-        parser.add_argument('-p',help='number of threading (default: 1)',type=int,default=1,dest='num_thread')
-        parser.add_argument('prefix',help='prefix name of output file(s)',type=str)
-        parser.add_argument('-v',help='verbose level, 0:quiet, 1:info, 2:debug (default: 0)',\
-                            default=1, type=int, dest='verbose')
+        parser.add_argument('bam',help='input BAM file',type=str,metavar='BAM')
+        parser.add_argument('-p','--prefix',help='prefix of output read files, default: the same as input BAM file',\
+                            type=str,metavar='STR')
+        parser.add_argument('-v','--verbose',help='verbose output',\
+                            default=False, action='store_true',dest='verbose')
         opts = parser.parse_args()
 
         # set logging
-        if opts.verbose == 1:
+        if opts.verbose:
             logging.basicConfig(format="[%(asctime)s] : %(levelname)s : %(message)s", level=logging.INFO)
-        elif opts.verbose == 2:
-            logging.basicConfig(format="[%(asctime)s] : %(levelname)s : %(message)s", level=logging.DEBUG)
 
         # set timer
         t0 = time.time()
 
         # main code
-        if True:
-            bamlist = list()
-            if opts.bam is not None:
-                bamlist = opts.bam
-            if opts.fofn is not None:
-                with open(opts.fofn,'r') as f:
-                    for line in f:
-                        bamlist.append(line.rstrip())
-            roilist = list()
-            if opts.roi is not None:
-                roilist = opts.roi
-            if opts.ROI is not None:
-                with open(opts.ROI,'r') as f:
-                    for line in f:
-                        roilist.append(line.rstrip().split()[0])
-            
-        extract_reads(bamlist, roilist, opts.num_thread, opts.prefix)
+        if not os.path.exists(os.path.abspath(opts.bam)):
+            print >>sys.stderr,'The input BAM file is not existed.'
+            sys.exit(0)
+        bamlist = [os.path.abspath(opts.bam)]
+           
+        if opts.prefix is None:
+            prefix = os.path.splitext(os.path.basename(opts.bam))[0]
+        else:
+            prefix = opts.prefix
+
+        extract_reads(bamlist, None, 1, prefix)
 
         # complete
         logging.info('total elapsed time is %f minutes' % ((time.time()-t0)/60.))

@@ -19,6 +19,7 @@ import subprocess
 from multiprocessing import Pool
 import time,random
 import textwrap,traceback
+from collections import defaultdict
 
 class SeqData:
     def __init__(self,_bam=""):
@@ -32,17 +33,20 @@ class SeqData:
 
 
 class GeneData:
-    def __init__(self,_gene="",_index="",_tree="",_tax=""):
+    def __init__(self,_gene="",_index="",_tree="",_tax="",_align=""):
         self.GeneSeq = _gene
         self.GeneIndex = _index
         self.GeneTree = _tree
         self.GeneTax = _tax
+        self.GeneAlign = _align
 
     def __repr__(self):
-        return 'GeneSeq=%s, GeneIndex=%s, GeneTree=%s'%(self.GeneSeq,self.GeneIndex,self.GeneTree)
+        return 'GeneSeq=%s, GeneIndex=%s, GeneTree=%s, GeneAlign=%s'%(\
+                self.GeneSeq,self.GeneIndex,self.GeneTree,self.GeneAlign)
     
     def __str__(self):
-        return 'GeneSeq=%s, GeneIndex=%s, GeneTree=%s'%(self.GeneSeq,self.GeneIndex,self.GeneTree)
+        return 'GeneSeq=%s, GeneIndex=%s, GeneTree=%s, GeneAlign=%s'%(\
+                self.GeneSeq,self.GeneIndex,self.GeneTree,self.GeneAlign)
 
 
 def parse_data_info(data_info):
@@ -50,6 +54,7 @@ def parse_data_info(data_info):
     GeneSeq = ""
     GeneIndex = ""
     GeneTree = ""
+    GeneAlign = ""
     with open(data_info) as f:
         for line in f:
             line = line.rstrip()
@@ -68,31 +73,34 @@ def parse_data_info(data_info):
             elif line.startswith('GeneTax'):
                 GeneTax = line.split('=')[1]
                 GeneTax = GeneTax.strip()
-    return (SeqData(BamFile), GeneData(GeneSeq,GeneIndex,GeneTree,GeneTax))
+            elif line.startswith('GeneAlign'):
+                GeneAlign = line.split('=')[1]
+                GeneAlign = GeneAlign.strip()
+    return (SeqData(BamFile), GeneData(GeneSeq,GeneIndex,GeneTree,GeneTax,GeneAlign))
 
 
-def compute_depth_of_seq_data(GeneData,SeqData,OutFile):
+def compute_depth_of_seq_data(GeneIndex,BamFile,OutFile):
     global opts,ExecDir
 
     if opts.verbose:
         logging.info('profile sequencing depths')
 
     N = 0;
-    with open(SeqData.BamFile) as f:
+    with open(BamFile) as f:
         for line in f:
             if len(line.strip())>0:
                 N += 1
     N = min([N,opts.cores])
-    #cmd = ['mpirun','-np',str(N),os.path.join(ExecDir,'coverage_all_samples.py')]
     cmd = [os.path.join(ExecDir,'coverage_all_samples.py'),'-c',str(N)]
 
     if opts.verbose:
         cmd.append('-v')
 
-    cmd.extend([SeqData.BamFile,GeneData.GeneIndex])
+    cmd.extend([BamFile,GeneIndex])
 
     f = open(OutFile,'w')
     subprocess.call(cmd,stdout=f)
+
 
 def compute_gene_abundance(GeneData,DepthFile,OutFile):
     global opts,ExecDir
@@ -111,7 +119,7 @@ def compute_gene_abundance(GeneData,DepthFile,OutFile):
     subprocess.call(cmd,stdout=f)
 
 
-def find_seed_genes(GeneData,GeneAbundance,OutFile):
+def find_seed_genes(GeneData,GeneAbundance,GeneDepth,OutFile):
     global opts,ExecDir
 
     if opts.verbose:
@@ -125,12 +133,11 @@ def find_seed_genes(GeneData,GeneAbundance,OutFile):
     if len(GeneData.GeneTax)>0:
         cmd.extend(['-T',GeneData.GeneTax])
 
-    cmd.extend(['-s',str(opts.gene_sim),'-c',str(opts.gene_coverage)])
-    if opts.gene_abun is not None:
-        cmd.extend(['-d',str(opts.gene_abun)])
-    else:
-        cmd.extend(['-r',str(opts.gene_abun_ratio)])
+    cmd.extend(['-s',str(opts.gene_sim),'-c',str(opts.clade_coverage)])
+    cmd.extend(['-d',str(opts.clade_depth)])
     cmd.extend([GeneData.GeneTree,GeneAbundance])
+    cmd.extend([GeneDepth,GeneData.GeneIndex])
+    cmd.extend([GeneData.GeneAlign])
 
     f = open(OutFile,'w')
     subprocess.call(cmd,stdout=f)
@@ -193,14 +200,14 @@ def strain_call(TmpDir):
     with open(os.path.join(TmpDir,'%s.fa'%opts.prefix),'w') as f:
         subprocess.call(cmd,stdout=f)
 
-#def gene_taxonomy_annotation(GeneData,TmpDir):
-#    global opts
+
     
 def rbra_pipe(GeneData,SeqData):
     global opts,ExecDir
 
     WorkDir = os.getcwd()
-    TmpDir = os.path.join(WorkDir,"RBRA_work_dir_%s"%(random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')))
+    TmpDir = os.path.join(WorkDir,"RBRA_work_dir_%s"%(\
+             ''.join(random.sample('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',5))))
     if os.path.exists(TmpDir):
         subprocess.call(['rm','-rf',TmpDir])
     os.mkdir(TmpDir);
@@ -208,7 +215,7 @@ def rbra_pipe(GeneData,SeqData):
     
     # TODO  1. compute depth and breadth of sequencing data
     GeneDepth = os.path.join(TmpDir,'gene_depth.txt')
-    compute_depth_of_seq_data(GeneData,SeqData,GeneDepth)
+    compute_depth_of_seq_data(GeneData.GeneIndex,SeqData.BamFile,GeneDepth)
 
     # TODO  2. compute gene abundance
     GeneAbun = os.path.join(TmpDir,'gene_abundance.txt')
@@ -216,7 +223,7 @@ def rbra_pipe(GeneData,SeqData):
 
     # TODO  3. define seed gene
     SeedGene = os.path.join(TmpDir,'seed_gene.txt')
-    find_seed_genes(GeneData,GeneAbun,SeedGene)
+    find_seed_genes(GeneData,GeneAbun,GeneDepth,SeedGene)
     
     # TODO  4. re-cluster sequencing data
     recluster_data(GeneData,SeqData,SeedGene)
@@ -225,7 +232,10 @@ def rbra_pipe(GeneData,SeqData):
     strain_call(TmpDir)
     
     # TODO mv result outside
-    subprocess.call(['cp',os.path.join(TmpDir,'%s.fa'%opts.prefix),os.path.join(WorkDir,'%s.fa'%opts.prefix)])
+    #subprocess.call(['cp',os.path.join(TmpDir,'%s.fa'%opts.prefix),os.path.join(WorkDir,'%s.fa'%opts.prefix)])
+    cmd = ['seqtk','seq','-L','400',os.path.join(TmpDir,'%s.fa'%opts.prefix)]
+    with open(os.path.join(WorkDir,'%s.fa'%opts.prefix),'w') as f:
+        subprocess.call(cmd,stdout=f)
 
     # back to WorkDir and delete TmpDir
     os.chdir(WorkDir)
@@ -249,8 +259,8 @@ if __name__=="__main__":
         # command-line options for StrainCall
         parser.add_argument('-D','--max-depth',help='downsample data to the specified depth [800]',\
                             default=800,type=int,dest='max_depth',metavar='INT')
-        parser.add_argument('-q','--map-qual',help='only include reads with mapping quality >= INT [3]',\
-                            default=3,type=int,dest='map_qual',metavar='INT')
+        parser.add_argument('-q','--map-qual',help='only include reads with mapping quality >= INT [0]',\
+                            default=0,type=int,dest='map_qual',metavar='INT')
         parser.add_argument('-i','--max-ins',help='only include reads with insert length <= INT [13]',\
                             default=13,type=int,dest='max_ins',metavar='INT')
         parser.add_argument('-l','--read-len',help='only include reads with length >= INT [70]',\
@@ -259,16 +269,17 @@ if __name__=="__main__":
                             default=0.02,type=float,dest='tau',metavar='FLT')
         parser.add_argument('-d','--diff-rate',help='only include strains with difference rate >= FLT [0.02]',\
                             default=0.02,type=float,dest='diff_rate',metavar='FLT')
-        parser.add_argument('-g','--gene-sim',help='used in finding seed gene, merge genes with similarity >= FLT [0.9]',\
+        parser.add_argument('-g','--gene-similarity',\
+                            help='used in finding seed gene, merge genes with similarity >= FLT [0.9]',\
                             default=0.9,type=float,dest='gene_sim',metavar='FLT')
-        parser.add_argument('-C','--gene-coverage',help='used in finding seed gene, coverage >= FLT [0.75]',\
-                            default=0.75,type=float,dest='gene_coverage',metavar='FLT')
-        parser.add_argument('-r','--gene-abun-ratio',help='used in finding seed gene, abundance ratio >= FLT [0.0005]', \
-                            default=0.0005,type=float,dest='gene_abun_ratio',metavar='FLT')
-        parser.add_argument('-a','--gene-abun',help='used in finding seed gene, abundance >= INT (second option)',\
-                            type=int,dest='gene_abun',metavar='INT')
-        parser.add_argument('-p','--prefix',help='output filename prefix [16s_gene_assembly]',\
-                            default='16s_gene_assembly',dest='prefix',metavar='STR')
+        parser.add_argument('-K','--clade-coverage',\
+                            help='used in finding seed gene, the portion of clade covered by reads >= FLT [0.9]',\
+                            default=0.9,type=float,dest='clade_coverage',metavar='FLT')
+        parser.add_argument('-A','--clade-depth',\
+                            help='used in finding seed gene, gene depth sum of a clade >= INT [1]',\
+                            default=1,type=int,dest='clade_depth',metavar='INT')
+        parser.add_argument('-p','--prefix',help='output filename prefix [16S_gene_assembly]',\
+                            default='16S_gene_assembly',dest='prefix',metavar='STR')
         # other options
         parser.add_argument('-R',dest='keep',action='store_true',default=False,help='keep intermediate files')
         parser.add_argument('-v',dest='verbose',action='store_true',default=False,help='verbose output')
@@ -288,7 +299,7 @@ if __name__=="__main__":
 
         # TODO: complete
         if opts.verbose:
-            logging.info('elapsed time is %.5f minutes' % ((time.time()-t_start)/60.))
+            logging.info('elapsed time is {} minutes'.format(round((time.time()-t_start)/60.,5)))
 
         sys.exit(0)
     except KeyboardInterrupt,e:

@@ -124,7 +124,7 @@ def main():
             Z = 0
             for b in bedlist:
                 Z += int(os.path.getsize(b))
-            logging.info('join %d depth-files in total size %f Mb'%(M,np.round(Z/1024./1024.,3))) 
+            logging.info('join {} depth-files in total size {} Mb'.format(M,round(Z/1024./1024.,5))) 
 
         bed = os.path.join(tmp_dir,'all.bed')
         if len(bedlist)==1:
@@ -200,9 +200,9 @@ if __name__ == "__main__":
         # TODO main routine
         main()
 
-        tescape = (time.time()-tstart)/60.0
+        tescape = round((time.time()-tstart)/60.0,5)
         if opts.verbose:
-            logging.info('escape time is %f minutes' % tescape)
+            logging.info('elapsed time is {} minutes'.format(tescape))
         sys.exit(0)
     except KeyboardInterrupt as e:
         raise e

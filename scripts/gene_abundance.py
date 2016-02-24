@@ -36,11 +36,11 @@ def cal_gene_abundance(breadth,depth):
 
 def cal_gene_coverage(breadth,depth):
     """calculate the coverage ratio of a gene"""
-    ratio = 0
+    ratio = []
     for r,a in izip(breadth,depth):
         if a>0:
-            ratio += r
-    return ratio
+            ratio += [r]
+    return sum(ratio)
 
 
 def main():
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
         # TODO: complete
         if opts.verbose:
-            logging.info('elapsed time is %.5f minutes' % ((time.time()-t_start)/60.))
+            logging.info('elapsed time is {} minutes'.format(round((time.time()-t_start)/60.,5)))
 
         sys.exit(0)
     except KeyboardInterrupt,e:

@@ -1027,6 +1027,8 @@ int main(int argc, char** argv)
             sort(strains.begin(),strains.end(),[](Strain& a, Strain& b){return a.abundance>b.abundance;});
 
             // output local results
+            GenomeSeq gene_seq0;
+            load_gene_seq(parameters->gene_file,it->gn,gene_seq0);
             int si = 0;
             for (auto s=strains.begin(); s!=strains.end(); ++s,++si)
             {
@@ -1034,10 +1036,15 @@ int main(int argc, char** argv)
                 //if (s->abundance>=parameters->tau)
                 // change by Feng Zeng, October 3 2015
                 if (s->abundance>=parameters->tau and aux_reads.size()*s->abundance>10)
-                {
-                    cout << ">" << it->gn << ":" << it->p0 << "-" << it->p1 << "_" << si << "_" << s->abundance << " "
+                {   
+                    // change by Feng Zeng, Jan 22, 2016
+                    GenomeSeq out_seq = gene_seq0;
+                    //out_seq.replace(it->p0-1, it->p1-it->p0+1, s->plain_seq());
+                    out_seq = s->plain_seq();
+
+                    cout << ">" << it->gn << "" << it->p0 << "" << it->p1 << "" << si << " "
                          << " " << int(aux_reads.size()*s->abundance) << endl;
-                    cout << s->plain_seq() << endl;
+                    cout << out_seq << endl;
                 }
             }
         }else
