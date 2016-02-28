@@ -50,7 +50,7 @@ class ExInstall(install):
         # install copy number file
         self.copy_file(os.path.join(BASEPATH,'scripts/rrnDB_RDP.tsv'), os.path.join(self.exec_prefix,'bin/rrnDB_RDP.tsv'))
 
-install_requires = ['scipy >= 0.15.1','numpy >= 1.9.2','ete2 >= 2.3.1','mpi4py >= 1.3.1']
+install_requires = ['scipy>=0.15.1','numpy>=1.9.2','ete2>=2.3.1','mpi4py>=1.3.1','scikit-bio==0.4.1']
 scripts = glob.glob('scripts/*.py')
 
 setup(

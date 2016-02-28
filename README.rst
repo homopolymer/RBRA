@@ -25,10 +25,15 @@ Dependency
 * Samtools >= 1.2
 * Bedtools >= 2.24.0
 * Sickle >= 1.33
+* Scikit-bio == 0.4.0
 
 ============
 Installation
 ============
+
+* Set up environment variable
+  
+    export CXX=<PATH TO G++4.9>
 
 * Clone the repository::
 
@@ -66,6 +71,7 @@ A metadata file, e.g. data_info.txt, contains the following contents:
     2) GeneIndex=<FILE>, the FASTA index file.
     3) GeneTree=<FILE>, a Newick file recording the phylgenetic tree of 16S rRNA genes.
     4) GeneTax=<FILE>, a taxonomic annotation of 16S rRNA genes.
+    5) GeneAlign=<FILE>, a FASTA file of 16S sequence alignments.
 
 =====
 Usage
