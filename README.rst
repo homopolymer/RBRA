@@ -31,7 +31,7 @@ Dependency
 Installation
 ============
 
-* Set up environment variable
+* Set up environment variable::
   
     $ export CXX=<PATH TO G++4.9>
 
