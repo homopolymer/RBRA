@@ -85,7 +85,7 @@ Usage
 Test
 ====
 
-The repository RBRA_Test contains data and script to test whether RBRA installs and works correctly. Dowload test data and run the following codes for test::
+The repository [RBRA_Test](https://github.com/homopolymer/RBRA_Test) contains data and script to test whether RBRA installs and works correctly. Download test data and run the following codes for test::
 
     $ cd test
     $ python make_datainfo.py
