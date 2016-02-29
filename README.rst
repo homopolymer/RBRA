@@ -85,11 +85,11 @@ Usage
 Test
 ====
 
-The directory <test> contains data and script to test whether RBRA installs and works correctly. ::
+The repository RBRA_Test contains data and script to test whether RBRA installs and works correctly. Dowload test data and run the following codes for test::
 
     $ cd test
     $ python make_datainfo.py
-    $ ../bin/rbra.py -c 20 -v data_info.txt 2>&1 | tee log.txt
+    $ python <PATH TO rbra.py> -c 20 -v data_info.txt 2>&1 | tee log.txt
     $ less log.txt
 
 ==========

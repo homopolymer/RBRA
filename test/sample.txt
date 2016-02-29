@@ -1,2 +1,0 @@
-#RUN	SAMPLE	MODE	SINGLE	PAIRED1	PAIRED2
-SRR606249	OAK_MOCK_WGS	paired	na	/data/fzeng/Project/RibosomeAssembly/data/OAK/SRR606249_1.fastq	/data/fzeng/Project/RibosomeAssembly/data/OAK/SRR606249_2.fastq
