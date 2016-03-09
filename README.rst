@@ -16,22 +16,24 @@ RBRA is a **pipeline** for assembling the **strain-level** full-length **16S rRN
 Dependency
 ==========
 
-Following Python packages are all assumed installed::
-
-* Python >= 2.7.10
-* ETE2 Toolkit >= 2.3.1
-* Scipy >= 0.15.1
-* Numpy >= 1.9.2
-* Scikit-bio == 0.4.0
 
 Following tools are all assumed installed and could be found in system environment::
 
+* Python >= 2.7.10
 * GCC >= 4.9.1
 * Bowtie2 >= 2.2.4
 * Samtools >= 1.2
 * Bedtools >= 2.24.0
 * Sickle >= 1.33
 * Seqtk >= 1.0
+
+Following Python packages are all assumed installed::
+
+* ETE2 Toolkit >= 2.3.1
+* Scipy >= 0.15.1
+* Numpy >= 1.9.2
+* Scikit-bio == 0.4.0
+
 
 ============
 Installation
