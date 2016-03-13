@@ -33,6 +33,7 @@ Following Python packages are all assumed installed::
 * Scipy >= 0.15.1
 * Numpy >= 1.9.2
 * Scikit-bio == 0.4.0
+* Biopython >= 1.65
 
 
 ============
