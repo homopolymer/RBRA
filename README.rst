@@ -1,5 +1,5 @@
 ****
-RBRA
+RBRA: metagenomic 16S gene assembly
 ****
 
 Created by Feng Zeng Summer 2015.
@@ -10,7 +10,7 @@ Copyright 2015 Feng Zeng. All rights reserved.
 Overview
 ========
 
-RBRA is a **pipeline** for assembling the **strain-level** full-length **16S rRNA** genes.  It is designed for the large-scale metagenomic studies which contain tens to hundreds of samples.  RBRA uses the partial order graph (POG) and streaming Dirichlet process (DP) mixture clustering techniques to decode the composition of highly similar microorganisms. It is *lightweight*, *ultrafast*, *accurate* and *easy-to-use*. RBRA works on both Illumina and Roche/454 sequencing data.
+RBRA is a pipeline for assembling full-length 16S rRNA gene sequences. It is designed for the large-scale metagenomic studies which contain tens to hundreds of samples. RBRA uses phylogenetic tree search and Dirichlet process (DP) mixture clustering techniques to decode the composition of highly similar microorganisms. It is lightweight, ultrafast, accurate and easy-to-use. RBRA works on both Illumina and Roche/454 sequencing data.
 
 ==========
 Dependency
